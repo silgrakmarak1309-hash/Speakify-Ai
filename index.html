@@ -1,1 +1,1007 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Speakify AI</title>
 
+  <!-- PWA & Mobile WebAPK Support for Amazon Appstore / WebIntoApp -->
+  <meta name="theme-color" content="#4f46e5">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="manifest" href="data:application/manifest+json;utf8,{%22name%22:%22Speakify%22,%22short_name%22:%22Speakify%22,%22start_url%22:%22/%22,%22display%22:%22standalone%22,%22background_color%22:%22#ffffff%22,%22theme_color%22:%22#4f46e5%22}">
+
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    body, html {
+      width: 100%;
+      height: 100%;
+      background-color: #f8f9fc;
+      color: #1e293b;
+      overflow-x: hidden;
+    }
+
+    .app-container {
+      width: 100vw;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      background-color: #f8f9fc;
+      padding-bottom: 24px;
+    }
+
+    /* Top Navigation Header */
+    header {
+      width: 100%;
+      padding: 14px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background-color: #ffffff;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    header h1 {
+      font-size: 1.1rem;
+      color: #0f172a;
+      font-weight: 700;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .lang-btn {
+      background-color: #eff6ff;
+      color: #2563eb;
+      border: 1px solid #dbeafe;
+      padding: 6px 10px;
+      border-radius: 18px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .streak-badge {
+      background-color: #fff7ed;
+      color: #c2410c;
+      padding: 6px 10px;
+      border-radius: 18px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      border: 1px solid #ffedd5;
+    }
+
+    .ad-banner-wrapper {
+      width: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background-color: #e2e8f0;
+      min-height: 50px;
+      text-align: center;
+    }
+
+    .content {
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .hero-card {
+      background: linear-gradient(135deg, #4f46e5 0%, #3b82f6 100%);
+      color: #ffffff;
+      border-radius: 20px;
+      padding: 22px 18px;
+      text-align: center;
+      box-shadow: 0 10px 25px -5px rgba(79, 70, 229, 0.3);
+    }
+
+    .hero-card h2 {
+      font-size: 1.2rem;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+
+    .hero-card p {
+      font-size: 0.82rem;
+      color: #e0e7ff;
+      margin-bottom: 16px;
+      line-height: 1.4;
+    }
+
+    .btn-primary {
+      background-color: #ffffff;
+      color: #4f46e5;
+      border: none;
+      padding: 12px 20px;
+      border-radius: 30px;
+      font-weight: 600;
+      font-size: 0.9rem;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      width: 100%;
+      justify-content: center;
+    }
+
+    .btn-primary:active {
+      transform: scale(0.98);
+    }
+
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .section-title {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: #1e293b;
+    }
+
+    .grid-container {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .feature-card {
+      background: #ffffff;
+      border-radius: 16px;
+      padding: 14px;
+      border: 1px solid #f1f5f9;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+      cursor: pointer;
+      transition: transform 0.15s, background-color 0.15s;
+    }
+
+    .feature-card:active {
+      transform: scale(0.97);
+      background-color: #f8fafc;
+    }
+
+    .icon-wrapper {
+      width: 38px;
+      height: 38px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 10px;
+      font-size: 1.1rem;
+    }
+
+    .bg-blue { background-color: #eff6ff; color: #2563eb; }
+    .bg-purple { background-color: #f3e8ff; color: #9333ea; }
+    .bg-green { background-color: #f0fdf4; color: #16a34a; }
+    .bg-red { background-color: #fef2f2; color: #dc2626; }
+
+    .feature-card h3 {
+      font-size: 0.88rem;
+      font-weight: 700;
+      color: #0f172a;
+      margin-bottom: 3px;
+    }
+
+    .feature-card p {
+      font-size: 0.72rem;
+      color: #64748b;
+    }
+
+    .quest-card {
+      background: #ffffff;
+      border-radius: 16px;
+      padding: 12px 14px;
+      border: 1px solid #f1f5f9;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .quest-icon {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      background-color: #eff6ff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.95rem;
+    }
+
+    .quest-details {
+      flex: 1;
+    }
+
+    .quest-details h4 {
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: #0f172a;
+    }
+
+    .quest-details p {
+      font-size: 0.72rem;
+      color: #64748b;
+      margin-bottom: 5px;
+    }
+
+    .progress-bar {
+      width: 100%;
+      height: 6px;
+      background-color: #f1f5f9;
+      border-radius: 3px;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background-color: #4f46e5;
+      border-radius: 3px;
+      transition: width 0.3s ease;
+    }
+
+    .badge-xp {
+      background-color: #fef3c7;
+      color: #d97706;
+      font-size: 0.72rem;
+      font-weight: 700;
+      padding: 4px 8px;
+      border-radius: 12px;
+    }
+
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background-color: rgba(15, 23, 42, 0.4);
+      backdrop-filter: blur(4px);
+      z-index: 100;
+      justify-content: flex-end;
+      flex-direction: column;
+    }
+
+    .modal-content {
+      background-color: #ffffff;
+      width: 100vw;
+      max-height: 85vh;
+      border-top-left-radius: 24px;
+      border-top-right-radius: 24px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      animation: slideUp 0.25s ease-out;
+      overflow-y: auto;
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      border-bottom: 1px solid #f1f5f9;
+      padding-bottom: 12px;
+    }
+
+    .modal-title {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: #0f172a;
+    }
+
+    .close-btn {
+      background: none;
+      border: none;
+      font-size: 1.5rem;
+      cursor: pointer;
+      color: #64748b;
+      padding: 4px;
+    }
+
+    .form-group {
+      margin-bottom: 16px;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: #334155;
+      margin-bottom: 6px;
+    }
+
+    .form-control {
+      width: 100%;
+      padding: 12px;
+      border-radius: 12px;
+      border: 1px solid #cbd5e1;
+      background-color: #f8fafc;
+      font-size: 0.9rem;
+      color: #0f172a;
+      outline: none;
+    }
+
+    .list-item {
+      background-color: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 14px;
+      margin-bottom: 10px;
+    }
+
+    .list-item h5 {
+      font-size: 0.92rem;
+      color: #4f46e5;
+      margin-bottom: 6px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .list-item p {
+      font-size: 0.82rem;
+      color: #334155;
+      margin-bottom: 4px;
+      line-height: 1.4;
+    }
+
+    .list-item small {
+      font-size: 0.74rem;
+      color: #64748b;
+      font-style: italic;
+    }
+
+    .speak-btn {
+      background: #eff6ff;
+      border: 1px solid #dbeafe;
+      border-radius: 50%;
+      width: 32px;
+      height: 32px;
+      cursor: pointer;
+      font-size: 0.85rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .chat-modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background-color: #ffffff;
+      z-index: 200;
+      flex-direction: column;
+    }
+
+    .chat-body {
+      flex: 1;
+      padding: 16px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      background-color: #f8fafc;
+    }
+
+    .msg-wrapper {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      max-width: 85%;
+    }
+
+    .msg-wrapper.ai {
+      align-self: flex-start;
+    }
+
+    .msg-wrapper.user {
+      align-self: flex-end;
+    }
+
+    .msg {
+      padding: 12px 16px;
+      border-radius: 16px;
+      font-size: 0.88rem;
+      line-height: 1.4;
+      width: 100%;
+    }
+
+    .msg.user {
+      background-color: #4f46e5;
+      color: white;
+      border-bottom-right-radius: 4px;
+    }
+
+    .msg.ai {
+      background-color: #ffffff;
+      color: #0f172a;
+      border-bottom-left-radius: 4px;
+      border: 1px solid #e2e8f0;
+    }
+
+    .replay-btn {
+      background: #ffffff;
+      border: 1px solid #cbd5e1;
+      border-radius: 50%;
+      width: 32px;
+      height: 32px;
+      min-width: 32px;
+      cursor: pointer;
+      font-size: 0.85rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    }
+
+    .replay-btn:active {
+      transform: scale(0.92);
+      background-color: #f1f5f9;
+    }
+
+    .chat-controls {
+      padding: 18px 16px 24px;
+      background: white;
+      border-top: 1px solid #e2e8f0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .mic-ring {
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      background-color: #4f46e5;
+      color: white;
+      border: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      cursor: pointer;
+      box-shadow: 0 4px 14px rgba(79, 70, 229, 0.4);
+      transition: transform 0.15s, background-color 0.2s;
+    }
+
+    .mic-ring:active {
+      transform: scale(0.95);
+    }
+
+    .mic-ring.listening {
+      background-color: #ef4444;
+      animation: pulse 1.5s infinite;
+    }
+
+    @keyframes slideUp {
+      from { transform: translateY(100%); }
+      to { transform: translateY(0); }
+    }
+
+    @keyframes pulse {
+      0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.6); }
+      70% { box-shadow: 0 0 0 16px rgba(239, 68, 68, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="app-container">
+    <header>
+      <h1>Speakify AI</h1>
+      <div class="header-actions">
+        <button class="lang-btn" onclick="openModal('languageModal')">
+          🌐 <span id="currentLangLabel">EN / HI</span>
+        </button>
+        <div class="streak-badge">
+          🔥 <span>1 Day</span>
+        </div>
+      </div>
+    </header>
+
+    <div class="ad-banner-wrapper" id="adBannerBox">
+      <span style="font-size:0.75rem; color:#64748b;">Speakify AI Teacher</span>
+    </div>
+
+    <div class="content">
+      <div class="hero-card">
+        <h2>Talk to Your AI Teacher</h2>
+        <p>Practice live voice conversations, get instant grammar corrections, and speak with confidence.</p>
+        <button class="btn-primary" onclick="openChat()">
+          🎙️ Start Voice Practice
+        </button>
+      </div>
+
+      <div>
+        <div class="section-header">
+          <span class="section-title">Daily Learn</span>
+        </div>
+        <div class="grid-container">
+          <div class="feature-card" onclick="openModal('vocabModal')">
+            <div class="icon-wrapper bg-blue">🔖</div>
+            <h3>Daily Vocab</h3>
+            <p>5 new words today</p>
+          </div>
+
+          <div class="feature-card" onclick="openModal('grammarModal')">
+            <div class="icon-wrapper bg-purple">A</div>
+            <h3>Grammar Rules</h3>
+            <p>Tenses & Verbs</p>
+          </div>
+
+          <div class="feature-card" onclick="openModal('phrasesModal')">
+            <div class="icon-wrapper bg-green">💬</div>
+            <h3>Smart Phrases</h3>
+            <p>Common expressions</p>
+          </div>
+
+          <div class="feature-card" onclick="openModal('pronunciationModal')">
+            <div class="icon-wrapper bg-red">🎧</div>
+            <h3>Pronunciation</h3>
+            <p>Accent correction</p>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="section-header">
+          <span class="section-title">Daily Quests</span>
+          <span style="font-size: 0.78rem; color: #64748b;" id="questStatus">1/2 Completed</span>
+        </div>
+
+        <div class="quest-card">
+          <div class="quest-icon">🎙️</div>
+          <div class="quest-details">
+            <h4>Speak 3 Sentences</h4>
+            <p>Practice voice input with AI teacher</p>
+            <div class="progress-bar">
+              <div class="progress-fill" id="quest1Progress" style="width: 33%;"></div>
+            </div>
+          </div>
+          <span class="badge-xp">+50 XP</span>
+        </div>
+
+        <div class="quest-card">
+          <div class="quest-icon">🎓</div>
+          <div class="quest-details">
+            <h4>Learn 5 New Words</h4>
+            <p>Complete vocabulary daily module</p>
+            <div class="progress-bar">
+              <div class="progress-fill" id="quest2Progress" style="width: 100%;"></div>
+            </div>
+          </div>
+          <span class="badge-xp">+30 XP</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal" id="languageModal" onclick="closeOnBackdrop(event, 'languageModal')">
+    <div class="modal-content">
+      <div class="modal-header">
+        <span class="modal-title">🌐 Select Languages / Bhasha Chunein</span>
+        <button class="close-btn" onclick="closeModal('languageModal')">&times;</button>
+      </div>
+
+      <div class="form-group">
+        <label for="targetLangSelect">1. Target Language (Sikhne wali bhasha):</label>
+        <select class="form-control" id="targetLangSelect" onchange="saveLanguageSettings()">
+          <option value="en-US">English (United States)</option>
+          <option value="en-GB">English (United Kingdom)</option>
+          <option value="en-IN" selected>English (India)</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="nativeLangSelect">2. Native Language (Explanation / Samajhne wali bhasha):</label>
+        <select class="form-control" id="nativeLangSelect" onchange="saveLanguageSettings()">
+          <option value="hi-IN" selected>Hindi (हिंदी / Hinglish)</option>
+          <option value="bn-IN">Bengali (বাংলা)</option>
+          <option value="mr-IN">Marathi (मराठी)</option>
+          <option value="es-ES">Spanish (Español)</option>
+          <option value="en-US">English Only</option>
+        </select>
+      </div>
+
+      <button class="btn-primary" style="background-color: #4f46e5; color: white; margin-top: 10px;" onclick="closeModal('languageModal')">
+        ✓ Save Settings
+      </button>
+    </div>
+  </div>
+
+  <div class="modal" id="vocabModal" onclick="closeOnBackdrop(event, 'vocabModal')">
+    <div class="modal-content">
+      <div class="modal-header">
+        <span class="modal-title">Daily Vocabulary</span>
+        <button class="close-btn" onclick="closeModal('vocabModal')">&times;</button>
+      </div>
+      <div class="list-item">
+        <h5>Fluent <button class="speak-btn" onclick="speak('Fluent')">🔊</button></h5>
+        <p><strong>Meaning:</strong> Able to express oneself easily.</p>
+        <small>Hindi Meaning: धाराप्रवाह / bina ruke bolna.</small>
+      </div>
+      <div class="list-item">
+        <h5>Confident <button class="speak-btn" onclick="speak('Confident')">🔊</button></h5>
+        <p><strong>Meaning:</strong> Feeling or showing certainty.</p>
+        <small>Hindi Meaning: आत्मविश्वास से भरा hua.</small>
+      </div>
+      <div class="list-item">
+        <h5>Enhance <button class="speak-btn" onclick="speak('Enhance')">🔊</button></h5>
+        <p><strong>Meaning:</strong> Improve the quality or power.</p>
+        <small>Hindi Meaning: Behtar banana.</small>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal" id="grammarModal" onclick="closeOnBackdrop(event, 'grammarModal')">
+    <div class="modal-content">
+      <div class="modal-header">
+        <span class="modal-title">Grammar Rules</span>
+        <button class="close-btn" onclick="closeModal('grammarModal')">&times;</button>
+      </div>
+      <div class="list-item">
+        <h5>Present Simple Tense</h5>
+        <p><strong>Rule:</strong> Subject + Verb (s/es) + Object</p>
+        <small>Ex: "I practice English daily." (Main roz English practice karta hu)</small>
+      </div>
+      <div class="list-item">
+        <h5>Present Continuous Tense</h5>
+        <p><strong>Rule:</strong> Subject + is/am/are + Verb(-ing)</p>
+        <small>Ex: "I am learning grammar." (Main grammar seekh raha hu)</small>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal" id="phrasesModal" onclick="closeOnBackdrop(event, 'phrasesModal')">
+    <div class="modal-content">
+      <div class="modal-header">
+        <span class="modal-title">Smart Daily Phrases</span>
+        <button class="close-btn" onclick="closeModal('phrasesModal')">&times;</button>
+      </div>
+      <div class="list-item">
+        <h5>"Could you please repeat that?" <button class="speak-btn" onclick="speak('Could you please repeat that?')">🔊</button></h5>
+        <p>Polite request to repeat something.</p>
+        <small>Hindi: Kya aap ek baar fir bol sakte hain?</small>
+      </div>
+      <div class="list-item">
+        <h5>"In my opinion..." <button class="speak-btn" onclick="speak('In my opinion')">🔊</button></h5>
+        <p>Starting an opinion politely.</p>
+        <small>Hindi: Meri rai me...</small>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal" id="pronunciationModal" onclick="closeOnBackdrop(event, 'pronunciationModal')">
+    <div class="modal-content">
+      <div class="modal-header">
+        <span class="modal-title">Pronunciation Practice</span>
+        <button class="close-btn" onclick="closeModal('pronunciationModal')">&times;</button>
+      </div>
+      <div class="list-item" style="text-align: center;">
+        <h5 style="justify-content: center;">Word: "Comfortable"</h5>
+        <p>Phonetic: <strong>/ˈkʌm.fər.tə.bəl/</strong></p>
+        <small>Say "Kumf-ter-bul" (Not Com-for-table)</small>
+        <br><br>
+        <button class="btn-primary" style="width: auto; margin: 0 auto;" onclick="speak('Comfortable')">🔊 Listen Accent</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="chat-modal" id="chatModal">
+    <header>
+      <h1>Voice AI Teacher</h1>
+      <button class="close-btn" onclick="closeChat()">&times;</button>
+    </header>
+    <div class="chat-body" id="chatBody">
+      <div class="msg-wrapper ai">
+        <div class="msg ai" id="welcomeChatMsg">
+          Hello! I am your AI English Teacher. Tap the mic button below and start speaking in English.
+        </div>
+        <button class="replay-btn" onclick="speak('Hello! I am your AI English Teacher. Tap the mic button below and start speaking in English.')" title="Replay Audio">🔊</button>
+      </div>
+    </div>
+    <div class="chat-controls">
+      <span id="chatStatus" style="font-size: 0.82rem; color: #64748b; font-weight: 500;">Tap mic to start speaking</span>
+      <button class="mic-ring" id="micBtn" onclick="toggleListening()">🎙️</button>
+    </div>
+  </div>
+
+  <script>
+    let targetLang = 'en-IN';
+    let nativeLang = 'hi-IN';
+    let isListening = false;
+    let recognition = null;
+    let spokenSentenceCount = 1;
+    let availableVoices = [];
+
+    function loadVoices() {
+      if ('speechSynthesis' in window) {
+        availableVoices = window.speechSynthesis.getVoices();
+      }
+    }
+
+    if ('speechSynthesis' in window) {
+      loadVoices();
+      window.speechSynthesis.onvoiceschanged = loadVoices;
+    }
+
+    document.addEventListener('click', function unlockAudioEngine() {
+      if ('speechSynthesis' in window) {
+        const dummyUtterance = new SpeechSynthesisUtterance('');
+        window.speechSynthesis.speak(dummyUtterance);
+      }
+      
+      if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+        navigator.mediaDevices.getUserMedia({ audio: true })
+          .then(stream => {
+            stream.getTracks().forEach(track => track.stop());
+          })
+          .catch(() => {});
+      }
+      document.removeEventListener('click', unlockAudioEngine);
+    }, { once: true });
+
+    function initSpeechRecognition() {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      
+      if (!SpeechRecognition) {
+        return null;
+      }
+
+      const instance = new SpeechRecognition();
+      instance.continuous = false;
+      instance.interimResults = false;
+      instance.maxAlternatives = 1;
+      instance.lang = targetLang;
+
+      instance.onstart = () => {
+        isListening = true;
+        document.getElementById('micBtn').classList.add('listening');
+        document.getElementById('chatStatus').textContent = "Listening... Speak now";
+        document.getElementById('chatStatus').style.color = "#ef4444";
+      };
+
+      instance.onresult = (event) => {
+        if (event.results && event.results.length > 0) {
+          const text = event.results[0][0].transcript;
+          addMsg(text, 'user');
+          updateQuestProgress();
+          processAIResponse(text);
+        }
+      };
+
+      instance.onerror = (e) => {
+        console.warn("Speech recognition error:", e.error);
+        if (e.error === 'not-allowed') {
+          document.getElementById('chatStatus').textContent = "Microphone permission denied in App Settings.";
+        } else if (e.error === 'no-speech') {
+          document.getElementById('chatStatus').textContent = "No speech detected. Tap mic to try again.";
+        } else {
+          document.getElementById('chatStatus').textContent = "Didn't catch that. Tap mic to try again.";
+        }
+        document.getElementById('chatStatus').style.color = "#dc2626";
+        stopListening();
+      };
+
+      instance.onend = () => {
+        stopListening();
+      };
+
+      return instance;
+    }
+
+    recognition = initSpeechRecognition();
+
+    function saveLanguageSettings() {
+      targetLang = document.getElementById('targetLangSelect').value;
+      nativeLang = document.getElementById('nativeLangSelect').value;
+
+      let targetCode = targetLang.split('-')[0].toUpperCase();
+      let nativeCode = nativeLang.split('-')[0].toUpperCase();
+      document.getElementById('currentLangLabel').textContent = `${targetCode} / ${nativeCode}`;
+
+      if (recognition) {
+        recognition.lang = targetLang;
+      }
+    }
+
+    function toggleListening() {
+      if (!recognition) {
+        recognition = initSpeechRecognition();
+      }
+
+      if (!recognition) {
+        alert("Speech Recognition is not supported by your device WebView.");
+        return;
+      }
+
+      if (isListening) {
+        try {
+          recognition.stop();
+        } catch(e) {}
+      } else {
+        if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+          navigator.mediaDevices.getUserMedia({ audio: true })
+            .then((stream) => {
+              stream.getTracks().forEach(track => track.stop());
+              startSpeechEngine();
+            })
+            .catch((err) => {
+              console.warn("Direct mic prompt error:", err);
+              startSpeechEngine();
+            });
+        } else {
+          startSpeechEngine();
+        }
+      }
+    }
+
+    function startSpeechEngine() {
+      try {
+        recognition.lang = targetLang;
+        recognition.start();
+      } catch (e) {
+        console.error("Speech start retry:", e);
+        recognition = initSpeechRecognition();
+        if (recognition) {
+          try { recognition.start(); } catch(err) {}
+        }
+      }
+    }
+
+    function stopListening() {
+      isListening = false;
+      document.getElementById('micBtn').classList.remove('listening');
+      if (document.getElementById('chatStatus').style.color !== "rgb(220, 38, 38)") {
+        document.getElementById('chatStatus').textContent = "Tap mic to start speaking";
+        document.getElementById('chatStatus').style.color = "#64748b";
+      }
+    }
+
+    function addMsg(text, sender) {
+      const chatBody = document.getElementById('chatBody');
+      const wrapper = document.createElement('div');
+      wrapper.className = `msg-wrapper ${sender}`;
+
+      const div = document.createElement('div');
+      div.className = `msg ${sender}`;
+      div.textContent = text;
+      wrapper.appendChild(div);
+
+      if (sender === 'ai') {
+        const replayBtn = document.createElement('button');
+        replayBtn.className = 'replay-btn';
+        replayBtn.innerHTML = '🔊';
+        replayBtn.title = 'Replay Audio';
+        replayBtn.onclick = () => speak(text);
+        wrapper.appendChild(replayBtn);
+      }
+
+      chatBody.appendChild(wrapper);
+      chatBody.scrollTop = chatBody.scrollHeight;
+    }
+
+    function processAIResponse(userText) {
+      document.getElementById('chatStatus').textContent = "Teacher is responding...";
+      document.getElementById('chatStatus').style.color = "#4f46e5";
+      
+      setTimeout(() => {
+        let reply = "";
+        if (nativeLang.startsWith('hi')) {
+          reply = `Very good! You said: "${userText}". Apka sentence sahi hai, practice jaari rakhein!`;
+        } else {
+          reply = `Great sentence! You said: "${userText}". Keep practicing your speaking skills!`;
+        }
+
+        addMsg(reply, 'ai');
+        speak(reply);
+        document.getElementById('chatStatus').textContent = "Tap mic to start speaking";
+        document.getElementById('chatStatus').style.color = "#64748b";
+      }, 1000);
+    }
+
+    function speak(text) {
+      if (!('speechSynthesis' in window)) {
+        return;
+      }
+
+      window.speechSynthesis.cancel(); 
+
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.rate = 0.95;
+      utterance.pitch = 1.0;
+
+      if (availableVoices.length === 0) {
+        availableVoices = window.speechSynthesis.getVoices();
+      }
+
+      let selectedVoice = availableVoices.find(v => v.lang === targetLang) ||
+                          availableVoices.find(v => v.lang.startsWith(targetLang.split('-')[0])) ||
+                          availableVoices.find(v => v.lang.startsWith('en')) ||
+                          availableVoices[0];
+
+      if (selectedVoice) {
+        utterance.voice = selectedVoice;
+        utterance.lang = selectedVoice.lang;
+      } else {
+        utterance.lang = targetLang;
+      }
+
+      if (window.speechSynthesis.paused) {
+        window.speechSynthesis.resume();
+      }
+
+      setTimeout(() => {
+        window.speechSynthesis.speak(utterance);
+      }, 100);
+    }
+
+    function updateQuestProgress() {
+      spokenSentenceCount++;
+      let percent = Math.min((spokenSentenceCount / 3) * 100, 100);
+      document.getElementById('quest1Progress').style.width = percent + '%';
+      if(spokenSentenceCount >= 3) {
+        document.getElementById('questStatus').textContent = "2/2 Completed";
+      }
+    }
+
+    function openModal(id) {
+      document.getElementById(id).style.display = 'flex';
+    }
+
+    function closeModal(id) {
+      document.getElementById(id).style.display = 'none';
+    }
+
+    function closeOnBackdrop(event, id) {
+      if (event.target.id === id) {
+        closeModal(id);
+      }
+    }
+
+    function openChat() {
+      document.getElementById('chatModal').style.display = 'flex';
+    }
+
+    function closeChat() {
+      if (recognition && isListening) recognition.stop();
+      if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+      document.getElementById('chatModal').style.display = 'none';
+    }
+
+    saveLanguageSettings();
+  </script>
+</body>
+</html>
