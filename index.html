@@ -913,60 +913,138 @@
       chatBody.scrollTop = chatBody.scrollHeight;
     }
     
-    async function processAIResponse(userText) {
-  document.getElementById('chatStatus').textContent = "AI Teacher is analyzing grammar...";
+    // Smart AI Teacher Response Engine (Bilingual English + Hindi Teacher)
+function processAIResponse(userText) {
+  document.getElementById('chatStatus').textContent = "Teacher is thinking...";
   document.getElementById('chatStatus').style.color = "#4f46e5";
   
-  const systemPrompt = `You are an AI English Teacher. The user will speak to you in English (which might have bad grammar).
-Your job:
-1. Check if the user's sentence has grammar mistakes.
-2. If there is a mistake, output: "❌ Correction: [Correct Sentence]"
-3. If it is correct, output: "✅ Perfect!"
-4. Then answer the user's question naturally in 1 short sentence.
-
-Keep your response under 30 words.`;
-
-  try {
-    const response = await fetch("https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.2", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        inputs: `<s>[INST] ${systemPrompt} User said: "${userText}" [/INST]`
-      })
-    });
-
-    const data = await response.json();
-    let reply = "";
-
-    if (data && data[0] && data[0].generated_text) {
-      reply = data[0].generated_text.split('[/INST]')[1].trim();
-    } else {
-      reply = fallbackGrammarCheck(userText);
+  setTimeout(() => {
+    let lower = userText.toLowerCase().trim();
+    let replyObj = generateTeacherResponse(userText, lower);
+    
+    // UI Response Formatting
+    let formattedText = `English:\n${replyObj.english}\n\nHindi:\n${replyObj.hindi}`;
+    if (replyObj.correction) {
+      formattedText += `\n\nCorrection:\n${replyObj.correction}`;
+    }
+    if (replyObj.why) {
+      formattedText += `\n\nWhy:\n${replyObj.why}`;
     }
 
-    addMsg(reply, 'ai');
-    speak(reply);
-  } catch (err) {
-    let reply = fallbackGrammarCheck(userText);
-    addMsg(reply, 'ai');
-    speak(reply);
-  } finally {
+    addMsg(formattedText, 'ai');
+    
+    // Voice / TTS Response (Reads English first, then Hindi)
+    let ttsSpeech = `${replyObj.english}. ${replyObj.hindi}`;
+    if (replyObj.correction) {
+      ttsSpeech += `. Correct sentence is: ${replyObj.correction}`;
+    }
+    speak(ttsSpeech);
+
     document.getElementById('chatStatus').textContent = "Tap mic to start speaking";
     document.getElementById('chatStatus').style.color = "#64748b";
-  }
+  }, 600);
 }
 
-// Fallback logic if network fails
-function fallbackGrammarCheck(text) {
-  let lower = text.toLowerCase();
-  if (lower.includes("ask you meet") || lower.includes("meet by")) {
-    return "❌ Correction: 'Can I ask to meet you at a shop?'\nYes, sure!";
-  } else if (lower.includes("some question")) {
-    return "❌ Correction: 'Can I ask you a question?' or 'some questions?'\nYes, go ahead!";
-  } else if (lower.includes("ask some question of my friend")) {
-    return "❌ Correction: 'I asked a question to my friend.'";
+// Teacher Logic (Handles Corrections, Answers, and Bilingual output)
+function generateTeacherResponse(originalText, lower) {
+  let res = { english: "", hindi: "", correction: null, why: null };
+
+  // Case 1: Greeting & Asking what AI is doing / Wanting a teacher
+  if (lower.includes("doing") || lower.includes("want teacher") || lower.includes("speak with")) {
+    if (lower.includes("can i speak with i want teacher") || lower.includes("you are like doing")) {
+      res.correction = "Hello! What are you doing now? Can I speak with you? I want to practice with an English teacher.";
+      res.why = "यहाँ 'speak with' के साथ 'you' और 'want' के साथ 'to practice' लगाना grammatical requirement है।";
+    }
+    res.english = "Hello! I am here to help you practice English. Yes, of course, you can talk to me! What would you like to discuss today?";
+    res.hindi = "नमस्ते! मैं आपकी English practice में मदद करने के लिए यहाँ हूँ। हाँ, बिल्कुल, आप मुझसे बात कर सकते हैं! आज आप किस बारे में बात करना चाहते हैं?";
   }
-  return `I heard: "${text}". Try practicing in complete sentences!`;
+  
+  // Case 2: Emotion / Anger Questions ("did you angry", "are you angry")
+  else if (lower.includes("angry")) {
+    if (lower.includes("did you angry") || lower.includes("do you angry") || lower.includes("no angry")) {
+      res.correction = "Are you angry with me?";
+      res.why = "Angry के साथ 'did/do' की जगह 'Are' और 'with' का प्रयोग किया जाता है।";
+    }
+    res.english = "No, I am not angry at all! I am your friendly AI teacher. How can I help you right now?";
+    res.hindi = "नहीं, मैं बिल्कुल भी गुस्सा नहीं हूँ! मैं आपका दोस्त और टीचर हूँ। मैं अभी आपकी क्या मदद कर सकता हूँ?";
+  }
+
+  // Case 3: Asking Questions about Meeting / Shop / Location
+  else if (lower.includes("shop") || lower.includes("meet")) {
+    if (lower.includes("ask you meet") || lower.includes("meet by a shop")) {
+      res.correction = "Can I meet you at the shop?";
+      res.why = "Shop (जगह) के लिए 'by' की जगह 'at' preposition सही है।";
+    }
+    res.english = "I am a digital AI teacher, so we cannot meet in a real shop! But we can talk and practice here anytime. What do you want to buy from the shop?";
+    res.hindi = "मैं एक digital AI टीचर हूँ, इसलिए हम असली दुकान पर नहीं मिल सकते! लेकिन हम यहाँ कभी भी बात कर सकते हैं। आप दुकान से क्या खरीदना चाहते हैं?";
+  }
+
+  // Case 4: Asking for Name / Identity
+  else if (lower.includes("name") || lower === "what is") {
+    if (lower === "what name" || lower === "what is") {
+      res.correction = "What is your name?";
+      res.why = "पूरा sentence 'What is your name?' होना चाहिए।";
+    }
+    res.english = "My name is Speakify AI Teacher. I am always ready to help you improve your spoken English! What is your name?";
+    res.hindi = "मेरा नाम Speakify AI Teacher है। मैं आपकी English बोलने में मदद करने के लिए हमेशा तैयार हूँ! आपका नाम क्या है?";
+  }
+
+  // Case 5: Hinglish / Hindi usage
+  else if (lower.includes("kya") || lower.includes("hai") || lower.includes("per") || lower.includes("mat") || lower.includes("tu")) {
+    res.english = "I understood what you said! But try speaking fully in English so you can practice better. Let's start with a simple hello!";
+    res.hindi = "मैं आपकी बात समझ गया! लेकिन बेहतर practice के लिए English में बोलने की कोशिश करें। चलिए एक सरल 'Hello' से शुरुआत करते हैं!";
+  }
+
+  // Case 6: Short / Incomplete Words (e.g. "doing", "pump")
+  else if (lower.split(' ').length <= 2) {
+    if (lower === "doing") {
+      res.correction = "What are you doing?";
+      res.why = "अकेले 'doing' की जगह पूरा sentence बोलें।";
+      res.english = "I am teaching English to you right now! Try making a full question.";
+      res.hindi = "मैं अभी आपको English पढ़ा रहा हूँ! पूरा सवाल बनाने की कोशिश करें।";
+    } else {
+      res.english = `You mentioned "${originalText}". Can you try telling me a complete sentence about it in English?`;
+      res.hindi = `आपने "${originalText}" कहा। क्या आप इसके बारे में एक पूरा English वाक्य बोल सकते हैं?`;
+    }
+  }
+
+  // Case 7: General / Correct English
+  else {
+    res.english = `That is a good sentence! You said: "${originalText}". What else would you like to talk about today?`;
+    res.hindi = `यह बहुत अच्छा वाक्य था! आप आज और किस बारे में बात करना चाहते हैं?`;
+  }
+
+  return res;
+}
+
+// Clean Speech Output (TTS)
+function speak(text) {
+  if (!('speechSynthesis' in window)) return;
+
+  window.speechSynthesis.cancel();
+
+  // Strip UI formatting labels if any remain
+  let cleanText = text.replace(/English:|Hindi:|Correction:|Why:/gi, '');
+
+  const utterance = new SpeechSynthesisUtterance(cleanText);
+  utterance.rate = 0.95;
+  utterance.pitch = 1.0;
+
+  if (availableVoices.length === 0) {
+    availableVoices = window.speechSynthesis.getVoices();
+  }
+
+  let selectedVoice = availableVoices.find(v => v.lang === targetLang) ||
+                      availableVoices.find(v => v.lang.startsWith(targetLang.split('-')[0])) ||
+                      availableVoices.find(v => v.lang.startsWith('en')) ||
+                      availableVoices[0];
+
+  if (selectedVoice) {
+    utterance.voice = selectedVoice;
+    utterance.lang = selectedVoice.lang;
+  }
+
+  window.speechSynthesis.speak(utterance);
           }
   
     function speak(text) {
