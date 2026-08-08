@@ -914,22 +914,29 @@
     }
 
     function processAIResponse(userText) {
-      document.getElementById('chatStatus').textContent = "Teacher is responding...";
-      document.getElementById('chatStatus').style.color = "#4f46e5";
-      
-      setTimeout(() => {
-        let reply = "";
-        if (nativeLang.startsWith('hi')) {
-          reply = `Very good! You said: "${userText}". Apka sentence sahi hai, practice jaari rakhein!`;
-        } else {
-          reply = `Great sentence! You said: "${userText}". Keep practicing your speaking skills!`;
-        }
+  document.getElementById('chatStatus').textContent = "Teacher is analyzing...";
+  document.getElementById('chatStatus').style.color = "#4f46e5";
+  
+  setTimeout(() => {
+    let lowerText = userText.toLowerCase().trim();
+    let reply = "";
 
-        addMsg(reply, 'ai');
-        speak(reply);
-        document.getElementById('chatStatus').textContent = "Tap mic to start speaking";
-        document.getElementById('chatStatus').style.color = "#64748b";
-      }, 1000);
+    // Basic Grammar Check Logic
+    if (lowerText.includes("you are how") || lowerText.includes("calling you are")) {
+      reply = `Small correction! Instead of "${userText}", you should say: "Hello, how are you?". Keep going!`;
+    } 
+    else if (lowerText.includes("hello") || lowerText.includes("hi")) {
+      reply = `Hello there! I heard you say: "${userText}". How can I help you practice your English today?`;
+    } 
+    else {
+      reply = `Good effort! You said: "${userText}". Try asking me a question like "How is the weather today?"`;
+    }
+
+    addMsg(reply, 'ai');
+    speak(reply);
+    document.getElementById('chatStatus').textContent = "Tap mic to start speaking";
+    document.getElementById('chatStatus').style.color = "#64748b";
+  }, 800);
     }
 
     function speak(text) {
