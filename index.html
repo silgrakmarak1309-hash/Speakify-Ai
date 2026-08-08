@@ -913,50 +913,61 @@
       chatBody.scrollTop = chatBody.scrollHeight;
     }
     
-    function processAIResponse(userText) {
-  document.getElementById('chatStatus').textContent = "Teacher is checking grammar...";
+    async function processAIResponse(userText) {
+  document.getElementById('chatStatus').textContent = "AI Teacher is analyzing grammar...";
   document.getElementById('chatStatus').style.color = "#4f46e5";
   
-  setTimeout(() => {
-    let lower = userText.toLowerCase().trim();
+  const systemPrompt = `You are an AI English Teacher. The user will speak to you in English (which might have bad grammar).
+Your job:
+1. Check if the user's sentence has grammar mistakes.
+2. If there is a mistake, output: "❌ Correction: [Correct Sentence]"
+3. If it is correct, output: "✅ Perfect!"
+4. Then answer the user's question naturally in 1 short sentence.
+
+Keep your response under 30 words.`;
+
+  try {
+    const response = await fetch("https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.2", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        inputs: `<s>[INST] ${systemPrompt} User said: "${userText}" [/INST]`
+      })
+    });
+
+    const data = await response.json();
     let reply = "";
 
-    // 1. Check for Angry/Emotion mistakes ("did you angry", "you are no angry")
-    if (lower.includes("angry")) {
-      if (lower.includes("did you angry") || lower.includes("do you angry") || lower.includes("no angry")) {
-        reply = `❌ Correction Needed!\nInstead of "${userText}", say:\n👉 "Are you angry with me?"`;
-      } else {
-        reply = `Great attempt! Say: "Are you angry with me?" to sound more natural.`;
-      }
-    }
-    // 2. Check for Name/Questions mistakes ("what name", "what is")
-    else if (lower === "what name" || lower.includes("what is name") || lower.includes("what name")) {
-      reply = `❌ Correction Needed!\nInstead of "${userText}", say:\n👉 "What is your name?"`;
-    }
-    // 3. Incomplete "what is"
-    else if (lower === "what is" || lower === "what") {
-      reply = `❌ Sentence Incomplete!\nInstead of just "${userText}", ask:\n👉 "What is this?" or "What do you mean?"`;
-    }
-    // 4. Incomplete/Broken Words
-    else if (lower.split(' ').length <= 2 && !lower.includes("hello") && !lower.includes("hi")) {
-      reply = `❌ Incomplete Sentence!\nYou said "${userText}". Try to make a full sentence like:\n👉 "Can you explain this to me?"`;
-    }
-    // 5. General Sentence Auto-Corrector
-    else {
-      // Basic heuristic for bad grammar (missing verbs/is/are)
-      if (!lower.includes("is") && !lower.includes("are") && !lower.includes("am") && !lower.includes("can") && !lower.includes("do") && !lower.includes("did")) {
-        reply = `💡 Grammar Tip: Your sentence "${userText}" might be missing a main verb (is/are/can). Try asking: "Can you help me correct this?"`;
-      } else {
-        reply = `✅ Good effort! You said: "${userText}". Try to ask another full question in English!`;
-      }
+    if (data && data[0] && data[0].generated_text) {
+      reply = data[0].generated_text.split('[/INST]')[1].trim();
+    } else {
+      reply = fallbackGrammarCheck(userText);
     }
 
     addMsg(reply, 'ai');
     speak(reply);
+  } catch (err) {
+    let reply = fallbackGrammarCheck(userText);
+    addMsg(reply, 'ai');
+    speak(reply);
+  } finally {
     document.getElementById('chatStatus').textContent = "Tap mic to start speaking";
     document.getElementById('chatStatus').style.color = "#64748b";
-  }, 600);
-    }
+  }
+}
+
+// Fallback logic if network fails
+function fallbackGrammarCheck(text) {
+  let lower = text.toLowerCase();
+  if (lower.includes("ask you meet") || lower.includes("meet by")) {
+    return "❌ Correction: 'Can I ask to meet you at a shop?'\nYes, sure!";
+  } else if (lower.includes("some question")) {
+    return "❌ Correction: 'Can I ask you a question?' or 'some questions?'\nYes, go ahead!";
+  } else if (lower.includes("ask some question of my friend")) {
+    return "❌ Correction: 'I asked a question to my friend.'";
+  }
+  return `I heard: "${text}". Try practicing in complete sentences!`;
+          }
   
     function speak(text) {
       if (!('speechSynthesis' in window)) {
