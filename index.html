@@ -914,42 +914,41 @@
     }
     
     function processAIResponse(userText) {
-  document.getElementById('chatStatus').textContent = "Teacher is thinking...";
+  document.getElementById('chatStatus').textContent = "Teacher is checking grammar...";
   document.getElementById('chatStatus').style.color = "#4f46e5";
   
   setTimeout(() => {
-    let text = userText.toLowerCase().trim();
+    let lower = userText.toLowerCase().trim();
     let reply = "";
 
-    // 1. Hinglish Detection
-    if (text.includes("kya") || text.includes("hai") || text.includes("per") || text.includes("ho") || text.includes("kaise")) {
-      reply = "Please speak in English! For example, ask: 'Is anyone here?' or 'How are you?'";
-    }
-    // 2. Questions starting with "what"
-    else if (text.startsWith("what")) {
-      if (text.includes("pump")) {
-        reply = "A pump is a device used to move fluids like water or air!";
-      } else if (text.includes("doing") || text.includes("your name")) {
-        reply = "I am your AI English Teacher, here to practice conversation with you!";
+    // 1. Check for Angry/Emotion mistakes ("did you angry", "you are no angry")
+    if (lower.includes("angry")) {
+      if (lower.includes("did you angry") || lower.includes("do you angry") || lower.includes("no angry")) {
+        reply = `❌ Correction Needed!\nInstead of "${userText}", say:\n👉 "Are you angry with me?"`;
       } else {
-        reply = `That's a good question about '${userText}'. Could you explain a bit more in English?`;
+        reply = `Great attempt! Say: "Are you angry with me?" to sound more natural.`;
       }
     }
-    // 3. Greetings & How are you
-    else if (text.includes("hello") || text.includes("hi")) {
-      if (text.includes("doing")) {
-        reply = "Hello! I'm doing great, thanks for asking. What about you?";
-      } else {
-        reply = "Hello there! How can I help you practice your English today?";
-      }
+    // 2. Check for Name/Questions mistakes ("what name", "what is")
+    else if (lower === "what name" || lower.includes("what is name") || lower.includes("what name")) {
+      reply = `❌ Correction Needed!\nInstead of "${userText}", say:\n👉 "What is your name?"`;
     }
-    // 4. Broken Grammar (like 'you are like doing')
-    else if (text.includes("you are like") || text.includes("doing what")) {
-      reply = `Correction needed! Instead of "${userText}", you can say: "What are you doing?"`;
+    // 3. Incomplete "what is"
+    else if (lower === "what is" || lower === "what") {
+      reply = `❌ Sentence Incomplete!\nInstead of just "${userText}", ask:\n👉 "What is this?" or "What do you mean?"`;
     }
-    // 5. Default Dynamic Response
+    // 4. Incomplete/Broken Words
+    else if (lower.split(' ').length <= 2 && !lower.includes("hello") && !lower.includes("hi")) {
+      reply = `❌ Incomplete Sentence!\nYou said "${userText}". Try to make a full sentence like:\n👉 "Can you explain this to me?"`;
+    }
+    // 5. General Sentence Auto-Corrector
     else {
-      reply = `I heard you say: "${userText}". That's interesting! Can you tell me more about that?`;
+      // Basic heuristic for bad grammar (missing verbs/is/are)
+      if (!lower.includes("is") && !lower.includes("are") && !lower.includes("am") && !lower.includes("can") && !lower.includes("do") && !lower.includes("did")) {
+        reply = `💡 Grammar Tip: Your sentence "${userText}" might be missing a main verb (is/are/can). Try asking: "Can you help me correct this?"`;
+      } else {
+        reply = `✅ Good effort! You said: "${userText}". Try to ask another full question in English!`;
+      }
     }
 
     addMsg(reply, 'ai');
