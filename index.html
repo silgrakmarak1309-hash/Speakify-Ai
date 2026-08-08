@@ -911,25 +911,36 @@
 
       chatBody.appendChild(wrapper);
       chatBody.scrollTop = chatBody.scrollHeight;
-    }
-
-    function processAIResponse(userText) {
-  document.getElementById('chatStatus').textContent = "Teacher is analyzing...";
+    }function processAIResponse(userText) {
+  document.getElementById('chatStatus').textContent = "Teacher is thinking...";
   document.getElementById('chatStatus').style.color = "#4f46e5";
   
   setTimeout(() => {
     let lowerText = userText.toLowerCase().trim();
     let reply = "";
 
-    // Basic Grammar Check Logic
-    if (lowerText.includes("you are how") || lowerText.includes("calling you are")) {
-      reply = `Small correction! Instead of "${userText}", you should say: "Hello, how are you?". Keep going!`;
-    } 
-    else if (lowerText.includes("hello") || lowerText.includes("hi")) {
-      reply = `Hello there! I heard you say: "${userText}". How can I help you practice your English today?`;
-    } 
+    // 1. Hinglish detect karke English bolne ko bolna
+    if (lowerText.includes("tu") || lowerText.includes("mat") || lowerText.includes("kya") || lowerText.includes("hai")) {
+      reply = `Please try speaking in English! For example, say: "How are you doing today?"`;
+    }
+    // 2. Galat Grammar Check
+    else if (lowerText.includes("you today doing") || lowerText.includes("doing what") || lowerText.includes("you are how")) {
+      reply = `Grammar Alert! Instead of "${userText}", say: "What are you doing today?" or "How are you?"`;
+    }
+    // 3. Sahi Grammar / General Greeting
+    else if (lowerText.includes("how are you")) {
+      reply = `I'm doing great, thank you! Your sentence "${userText}" was grammatically perfect. How about you?`;
+    }
+    else if (lowerText.includes("what is this")) {
+      reply = `This is Speakify AI, your English speaking practice assistant. Ask me anything!`;
+    }
+    // 4. Single Words
+    else if (lowerText.split(' ').length === 1) {
+      reply = `Try to speak full sentences! Instead of just "${userText}", say: "What are you doing?"`;
+    }
+    // Default reply
     else {
-      reply = `Good effort! You said: "${userText}". Try asking me a question like "How is the weather today?"`;
+      reply = `Good try! You said: "${userText}". To improve grammar, practice asking: "Can you help me learn English?"`;
     }
 
     addMsg(reply, 'ai');
@@ -937,8 +948,8 @@
     document.getElementById('chatStatus').textContent = "Tap mic to start speaking";
     document.getElementById('chatStatus').style.color = "#64748b";
   }, 800);
-    }
-
+          }
+  
     function speak(text) {
       if (!('speechSynthesis' in window)) {
         return;
